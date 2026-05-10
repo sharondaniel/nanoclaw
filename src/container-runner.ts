@@ -135,7 +135,9 @@ async function spawnContainer(session: Session): Promise<void> {
   const containerName = `nanoclaw-v2-${agentGroup.folder}-${Date.now()}`;
   // OneCLI agent identifier is always the agent group id — stable across
   // sessions and reversible via getAgentGroup() for approval routing.
-  const agentIdentifier = agentGroup.id;
+  // OneCLI requires identifiers to start with a letter; prefix with 'ag-'
+  // when the group id starts with a digit (UUIDs can start with 0-9).
+  const agentIdentifier = /^[a-z]/i.test(agentGroup.id) ? agentGroup.id : `ag-${agentGroup.id}`;
   const args = await buildContainerArgs(
     mounts,
     containerName,
@@ -297,6 +299,13 @@ function buildMounts(
   const globalDir = path.join(GROUPS_DIR, 'global');
   if (fs.existsSync(globalDir)) {
     mounts.push({ hostPath: globalDir, containerPath: '/workspace/global', readonly: true });
+  }
+
+  // Inbound attachments downloaded by channel adapters — read-only so the
+  // agent can read files sent by users but cannot modify the staging area.
+  const attachmentsDir = path.join(DATA_DIR, 'attachments');
+  if (fs.existsSync(attachmentsDir)) {
+    mounts.push({ hostPath: attachmentsDir, containerPath: '/workspace/attachments', readonly: true });
   }
 
   // Shared CLAUDE.md — read-only, imported by the composed entry point via

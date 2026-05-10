@@ -322,3 +322,42 @@ launchctl kickstart -k gui/$(id -u)/com.nanoclaw   # macOS
 ```
 
 `container/build.sh` reads `INSTALL_CJK_FONTS` from `.env` and passes it through as a Docker build-arg. Without CJK fonts, Chromium-rendered screenshots and PDFs containing CJK text show tofu (empty rectangles) instead of characters.
+
+## Operator Profile
+
+**Name:** Mr. Sharon Daniel
+**Company:** HLT (Hermes Logistics Technologies)
+**Role:** Development Director / Development Manager, Core product
+
+**Teams and responsibilities:**
+- **Core team** — Core product development
+- **NG team** — Hermes Next Generation apps
+- **Hermes API team** — API development
+- **IT team** — Internal IT
+- **Customer relations** — Existing customer issues and support
+- **Future projects** — New initiatives
+
+**Tools:**
+- **SD+ (ServiceDesk+ by Zoho)** — Customer communications, ticketing
+- **Azure DevOps** — Work items for Core, API, IT, and NG teams
+
+**Tech stack:**
+
+| Team | Technology | Notes |
+|------|-----------|-------|
+| Core | Magic XPA | Primary development platform |
+| Core | Oracle | Database; actively building new SQL functions to open additional access points |
+| Integration (legacy) | Magic XPI | Being phased out |
+| Integration (current) | Hermes API — Python FastAPI | Replacing XPI; exposes services for external system integration |
+| NG | Kafka | Message streaming |
+| NG | C# Lambda | Serverless functions |
+
+**HermesOne** — next-generation ecosystem of apps (active project). Individual apps being built within HermesOne:
+
+| App | Description |
+|-----|-------------|
+| Track and Trace | Shipment tracking |
+| DG Scan | Dangerous Goods scanning |
+| Documents Upload | Document management |
+| HermesOne Mobile | Mobile app |
+| Core access via Guacamole | Browser-based remote access to the Core application |
