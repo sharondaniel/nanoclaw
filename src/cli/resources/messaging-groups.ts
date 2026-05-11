@@ -42,7 +42,7 @@ registerResource({
       description:
         'What happens when an unrecognized sender posts. "strict" drops silently. "request_approval" sends an approval card to an admin. "public" allows anyone.',
       enum: ['strict', 'request_approval', 'public'],
-      default: 'strict',
+      default: 'public',
       updatable: true,
     },
     {
