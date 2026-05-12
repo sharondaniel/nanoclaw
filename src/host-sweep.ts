@@ -248,6 +248,7 @@ function enforceRunningContainerSla(
     });
     killContainer(session.id, 'absolute-ceiling');
     resetStuckProcessingRows(inDb, outDb, session, 'absolute-ceiling');
+    clearSessionContinuation(session.agent_group_id, session.id);
     return;
   }
 
@@ -259,6 +260,21 @@ function enforceRunningContainerSla(
   });
   killContainer(session.id, 'claim-stuck');
   resetStuckProcessingRows(inDb, outDb, session, 'claim-stuck');
+  clearSessionContinuation(session.agent_group_id, session.id);
+}
+
+function clearSessionContinuation(agentGroupId: string, sessionId: string): void {
+  try {
+    const db = openOutboundDbRw(agentGroupId, sessionId);
+    try {
+      db.prepare('DELETE FROM session_state').run();
+      log.info('Cleared session continuation after container kill', { sessionId });
+    } finally {
+      db.close();
+    }
+  } catch (err) {
+    log.warn('Failed to clear session continuation', { sessionId, err });
+  }
 }
 
 export function _resetStuckProcessingRowsForTesting(
