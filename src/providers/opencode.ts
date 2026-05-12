@@ -12,6 +12,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { readEnvFile } from '../env.js';
+import { getContainerConfig } from '../db/container-configs.js';
 import { registerProviderContainerConfig } from './provider-container-registry.js';
 
 function mergeNoProxy(current: string | undefined, additions: string): string {
@@ -48,6 +49,9 @@ registerProviderContainerConfig('opencode', (ctx) => {
     const value = envFileVars[key] ?? ctx.hostEnv[key];
     if (value) env[key] = value;
   }
+  // Per-agent model override: if container_configs.model is set, use it as OPENCODE_MODEL.
+  const configRow = getContainerConfig(ctx.agentGroupId);
+  if (configRow?.model) env['OPENCODE_MODEL'] = configRow.model;
 
   return {
     mounts: [{ hostPath: opencodeDir, containerPath: '/opencode-xdg', readonly: false }],
