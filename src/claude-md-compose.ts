@@ -115,6 +115,9 @@ export function composeGroupClaudeMd(group: AgentGroup): void {
   for (const [name, frag] of desired) {
     const fragPath = path.join(fragmentsDir, name);
     if (frag.type === 'symlink') {
+      // Preserve regular files — allows per-group overrides of shared skill
+      // fragments (e.g. a custom onecli-gateway.md that carves out exceptions).
+      if (fs.existsSync(fragPath) && !fs.lstatSync(fragPath).isSymbolicLink()) continue;
       syncSymlink(fragPath, frag.content);
     } else {
       writeAtomic(fragPath, frag.content);
