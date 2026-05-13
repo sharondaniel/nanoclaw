@@ -84,8 +84,8 @@ function ensureServer(): void {
   server = http.createServer(async (req, res) => {
     const url = req.url || '/';
 
-    // Route: /webhook/{adapterName}
-    const match = url.match(/^\/webhook\/([^/?]+)/);
+    // Route: /webhook/{adapterName} or /api/webhooks/{adapterName}
+    const match = url.match(/^\/(?:webhook|api\/webhooks)\/([^/?]+)/);
     if (!match) {
       res.writeHead(404, { 'Content-Type': 'text/plain' });
       res.end('Not found');
