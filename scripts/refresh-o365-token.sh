@@ -1,6 +1,7 @@
 #!/bin/bash
 # Refresh the Office 365 token for alerts@hermes-cargo.com in OneCLI
-# Credentials are read from .env in the project root
+# Uses client_credentials grant — no user login or refresh token needed.
+# Credentials are read from .env in the project root.
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 source "$SCRIPT_DIR/.env" 2>/dev/null
@@ -10,16 +11,15 @@ RESPONSE=$(curl -s --noproxy '*' -X POST \
   -H "Content-Type: application/x-www-form-urlencoded" \
   --data-urlencode "client_id=${O365_CLIENT_ID}" \
   --data-urlencode "client_secret=${O365_CLIENT_SECRET}" \
-  --data-urlencode "grant_type=refresh_token" \
-  --data-urlencode "refresh_token=${O365_REFRESH_TOKEN}" \
-  --data-urlencode "scope=https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/Mail.ReadWrite https://graph.microsoft.com/Mail.Send offline_access")
+  --data-urlencode "grant_type=client_credentials" \
+  --data-urlencode "scope=https://graph.microsoft.com/.default")
 
-TOKEN=$(/usr/bin/python3 -c "import sys,json; d=json.loads('$RESPONSE'); print(d['access_token']) if 'access_token' in d else exit(1)" 2>/dev/null)
+TOKEN=$(echo "$RESPONSE" | /usr/bin/python3 -c "import sys,json; d=json.load(sys.stdin); print(d['access_token']) if 'access_token' in d else exit(1)" 2>/dev/null)
 
 if [ -z "$TOKEN" ]; then
-  echo "$(date): FAILED to refresh O365 token" >> /tmp/o365-token-refresh.log
+  echo "$(date): FAILED to refresh O365 token: $(echo "$RESPONSE" | /usr/bin/python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('error_description','unknown'))" 2>/dev/null)" >> /tmp/o365-token-refresh.log
   exit 1
 fi
 
 /usr/local/bin/onecli secrets update --id "${O365_ONECLI_SECRET_ID}" --value "$TOKEN" >> /tmp/o365-token-refresh.log 2>&1
-echo "$(date): O365 token refreshed OK" >> /tmp/o365-token-refresh.log
+echo "$(date): O365 token refreshed OK (client_credentials)" >> /tmp/o365-token-refresh.log
