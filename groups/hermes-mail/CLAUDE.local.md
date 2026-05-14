@@ -77,25 +77,40 @@ Schedule a one-time task 24 hours from now to:
 1. Read `alerts_log.jsonl`
 2. Generate a structured report: counts by severity, list of criticals, patterns observed
 3. Include recommendations on how to handle recurring alert types
-4. Send the report to `hermes-mail` (WhatsApp) destination
+4. Send the report to BOTH `sharon-teams` (Teams) AND `hermes-mail` (WhatsApp) destinations
 
 ### Alert Classification Rules
 
-| Application | Condition | Duration | Severity | Team |
-|-------------|-----------|----------|----------|------|
-| HBM | Stop or Start | > 10 min | **Warning** | IT Team |
-| HBM | Stop or Start | > 20 min | **Critical** | IT Team |
-| HPS | Stop or Start | > 10 min | **Warning** | IT Team |
-| HPS | Stop or Start | > 20 min | **Critical** | IT Team |
-| EC2 Server | Stop or Start | > 5 min | **Warning** | IT Team |
-| EC2 Server | Stop or Start | > 10 min | **Warning** | IT Team |
+#### 🔴 Critical
+Requires immediate attention — something is broken or at serious risk of impacting operations.
+- **HBM** stopped or started and has not recovered after **> 20 minutes** — HBM is a core logistics process; prolonged downtime directly impacts shipment handling
+- **HPS** stopped or started and has not recovered after **> 20 minutes** — HPS is a print/processing service; extended outage causes a backlog
+- **EC2 server** stopped or started and still down after **> 10 minutes** — servers that stay down this long are unlikely to self-recover
+- Email subject contains "ALARM" or "CRITICAL" with no matching "OK" / "RESOLVED" pair that followed shortly after (i.e. the alarm is still open)
+- VPN tunnel alarm that stays in ALARM state (no OK following it within the same check window)
 
-**Fallback rules for unmatched alerts:**
-- Subject contains "ALARM" or "CRITICAL" → Critical
-- Subject contains "OK" or "RESOLVED" → Informational
-- Subject contains "WARNING" → Warning
-- AWS SNS subscription confirmation → Informational
-- Unknown → Warning (log, do not notify)
+#### 🟡 Warning
+Something is abnormal but may self-recover. Monitor closely — escalate if it persists.
+- **HBM** stopped or started and not recovered after **> 10 minutes but ≤ 20 minutes**
+- **HPS** stopped or started and not recovered after **> 10 minutes but ≤ 20 minutes**
+- **EC2 server** stopped or started and still in that state after **> 5 minutes but ≤ 10 minutes**
+- Email subject contains "WARNING"
+- An alarm appears without a corresponding "OK" in the same check window, but the subject/body doesn't indicate a critical service
+
+#### 🟢 Informational
+Expected events, self-resolved conditions, or noise that requires no action.
+- **EC2 server** state change (stop or start) that resolves within 5 minutes — routine instance cycling
+- An alarm email immediately followed by an "OK" / "RESOLVED" email in the same or next check window — transient spike, self-healed
+- AWS SNS subscription confirmations — setup/infrastructure notifications, no action needed
+- VPN tunnel flaps where ALARM and OK arrive in quick succession (tunnel bounced and recovered)
+- `Print_to_Email_Process_Alarm` transitions that go ALARM → OK within the same window
+- Any AWS CloudWatch alert whose next email is "OK" for the same alarm name
+
+#### Evaluation order
+Apply rules top-down. The first match wins. When comparing alarm/OK pairs, look across the current batch of emails being classified — if an alarm's OK arrived in the same batch, treat the whole pair as Informational (the alert resolved before anyone needed to act).
+
+**Fallback (no rule matched):**
+- Unknown/unrecognised alert → **Warning** (log it, do not notify — needs classification rule added)
 
 ### Log Format (alerts_log.jsonl)
 One JSON line per alert:
@@ -109,3 +124,4 @@ One JSON line per alert:
 - Always confirm before sending or forwarding unless Sharon says "send it"
 - Keep WhatsApp replies concise — summarise, don't dump raw JSON
 - Never show raw email IDs to Sharon
+- When Sharon sends a direct request (not a scheduled task), always send the response to `sharon-teams` so it appears in Teams where she can see it. Also send a brief copy to `hermes-mail` if appropriate.
